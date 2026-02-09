@@ -3,17 +3,18 @@ on:
   schedule:
     - cron: '0 0 * * *'
   workflow_dispatch:
-              
+ 
 jobs:
   sync:
     name: "Sync from Remote Source"
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Local Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git Identity
         run: |
@@ -23,15 +24,15 @@ jobs:
       - name: Fetch Remote Source
         run: |
           git remote add upstream https://github.com/kubernetes/kubernetes.git
-          git fetch upstream
+          git fetch upstream master
 
       - name: Sync Subdirectory to Root
         run: |
           SUBDIR="api/openapi-spec"
           
-          git checkout upstream/master -- "$SUBDIR/."
-          cp -rn "$SUBDIR/." .
-          rm -rf "$SUBDIR"
+          git checkout upstream/master -- "$SUBDIR"
+          cp -R "$SUBDIR/." .
+          rm -rf "api"
           
           # Stage and commit
           git add .
