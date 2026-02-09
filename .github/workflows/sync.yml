@@ -34,7 +34,9 @@ jobs:
           find . -maxdepth 1 ! -name '.' ! -name '.git' ! -name 'api' ! -name '.github' -exec rm -rf {} +
           cp -R "$SUBDIR/." .
           rm -rf "api"
-          
+ 
+          sed -i '1i > [!NOTE]\n> Synced from: [kubernetes/api/openapi-spec](https://github.com/kubernetes/kubernetes/tree/master/api/openapi-spec)\n' README.md
+
           # Stage and commit
           git add .
           if git diff-index --quiet HEAD; then
