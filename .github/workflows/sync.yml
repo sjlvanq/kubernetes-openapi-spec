@@ -31,6 +31,7 @@ jobs:
           SUBDIR="api/openapi-spec"
           
           git checkout upstream/master -- "$SUBDIR"
+          find . -maxdepth 1 ! -name '.' ! -name '.git' ! -name 'api' ! -name '.github' -exec rm -rf {} +
           cp -R "$SUBDIR/." .
           rm -rf "api"
           
