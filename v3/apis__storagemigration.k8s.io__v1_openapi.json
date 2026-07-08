@@ -1,8 +1,8 @@
 {
   "components": {
     "schemas": {
-      "io.k8s.api.coordination.v1beta1.LeaseCandidate": {
-        "description": "LeaseCandidate defines a candidate for a Lease object. Candidates are created such that coordinated leader election will pick the best leader from the list of candidates.",
+      "io.k8s.api.storagemigration.v1.StorageVersionMigration": {
+        "description": "StorageVersionMigration represents a migration of stored data to the latest storage version.",
         "properties": {
           "apiVersion": {
             "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
@@ -19,41 +19,47 @@
               }
             ],
             "default": {},
-            "description": "metadata is the standard object metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata"
+            "description": "Standard object metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata"
           },
           "spec": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateSpec"
+                "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigrationSpec"
               }
             ],
             "default": {},
-            "description": "spec contains the specification of the Lease. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status"
+            "description": "Specification of the migration."
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigrationStatus"
+              }
+            ],
+            "default": {},
+            "description": "Status of the migration."
           }
         },
-        "required": [
-          "spec"
-        ],
         "type": "object",
         "x-kubernetes-group-version-kind": [
           {
-            "group": "coordination.k8s.io",
-            "kind": "LeaseCandidate",
-            "version": "v1beta1"
+            "group": "storagemigration.k8s.io",
+            "kind": "StorageVersionMigration",
+            "version": "v1"
           }
         ]
       },
-      "io.k8s.api.coordination.v1beta1.LeaseCandidateList": {
-        "description": "LeaseCandidateList is a list of Lease objects.",
+      "io.k8s.api.storagemigration.v1.StorageVersionMigrationList": {
+        "description": "StorageVersionMigrationList is a collection of storage version migrations.",
         "properties": {
           "apiVersion": {
             "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
             "type": "string"
           },
           "items": {
-            "description": "items is a list of schema objects.",
+            "description": "Items is the list of StorageVersionMigration",
             "items": {
-              "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+              "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
             },
             "type": "array"
           },
@@ -68,7 +74,7 @@
               }
             ],
             "default": {},
-            "description": "Standard list metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata"
+            "description": "Standard list metadata More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata"
           }
         },
         "required": [
@@ -77,55 +83,51 @@
         "type": "object",
         "x-kubernetes-group-version-kind": [
           {
-            "group": "coordination.k8s.io",
-            "kind": "LeaseCandidateList",
-            "version": "v1beta1"
+            "group": "storagemigration.k8s.io",
+            "kind": "StorageVersionMigrationList",
+            "version": "v1"
           }
         ]
       },
-      "io.k8s.api.coordination.v1beta1.LeaseCandidateSpec": {
-        "description": "LeaseCandidateSpec is a specification of a Lease.",
+      "io.k8s.api.storagemigration.v1.StorageVersionMigrationSpec": {
+        "description": "Spec of the storage version migration.",
         "properties": {
-          "binaryVersion": {
-            "default": "",
-            "description": "binaryVersion is the binary version. It must be in a semver format without leading `v`. This field is required.",
-            "type": "string"
-          },
-          "emulationVersion": {
-            "description": "emulationVersion is the emulation version. It must be in a semver format without leading `v`. EmulationVersion must be less than or equal to BinaryVersion. This field is required when strategy is \"OldestEmulationVersion\"",
-            "type": "string"
-          },
-          "leaseName": {
-            "default": "",
-            "description": "leaseName is the name of the lease for which this candidate is contending. The limits on this field are the same as on Lease.name. Multiple lease candidates may reference the same Lease.name. This field is immutable.",
-            "type": "string"
-          },
-          "pingTime": {
+          "resource": {
             "allOf": [
               {
-                "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.MicroTime"
+                "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.GroupResource"
               }
             ],
-            "description": "pingTime is the last time that the server has requested the LeaseCandidate to renew. It is only done during leader election to check if any LeaseCandidates have become ineligible. When PingTime is updated, the LeaseCandidate will respond by updating RenewTime."
-          },
-          "renewTime": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.MicroTime"
-              }
-            ],
-            "description": "renewTime is the time that the LeaseCandidate was last updated. Any time a Lease needs to do leader election, the PingTime field is updated to signal to the LeaseCandidate that they should update the RenewTime. Old LeaseCandidate objects are also garbage collected if it has been hours since the last renew. The PingTime field is updated regularly to prevent garbage collection for still active LeaseCandidates."
-          },
-          "strategy": {
-            "description": "strategy is the strategy that coordinated leader election will use for picking the leader. If multiple candidates for the same Lease return different strategies, the strategy provided by the candidate with the latest BinaryVersion will be used. If there is still conflict, this is a user error and coordinated leader election will not operate the Lease until resolved.",
-            "type": "string"
+            "default": {},
+            "description": "The resource that is being migrated. The migrator sends requests to the endpoint serving the resource. Immutable."
           }
         },
         "required": [
-          "leaseName",
-          "binaryVersion",
-          "strategy"
+          "resource"
         ],
+        "type": "object"
+      },
+      "io.k8s.api.storagemigration.v1.StorageVersionMigrationStatus": {
+        "description": "Status of the storage version migration.",
+        "properties": {
+          "conditions": {
+            "description": "The latest available observations of the migration's current state.",
+            "items": {
+              "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Condition"
+            },
+            "type": "array",
+            "x-kubernetes-list-map-keys": [
+              "type"
+            ],
+            "x-kubernetes-list-type": "map",
+            "x-kubernetes-patch-merge-key": "type",
+            "x-kubernetes-patch-strategy": "merge"
+          },
+          "resourceVersion": {
+            "description": "ResourceVersion to compare with the GC cache for performing the migration. This is the current resource version of given group, version and resource when kube-controller-manager first observes this StorageVersionMigration resource.",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "io.k8s.apimachinery.pkg.apis.meta.v1.APIResource": {
@@ -234,6 +236,52 @@
           }
         ]
       },
+      "io.k8s.apimachinery.pkg.apis.meta.v1.Condition": {
+        "description": "Condition contains details for one aspect of the current state of this API Resource.",
+        "properties": {
+          "lastTransitionTime": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
+              }
+            ],
+            "description": "lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable."
+          },
+          "message": {
+            "default": "",
+            "description": "message is a human readable message indicating details about the transition. This may be an empty string.",
+            "type": "string"
+          },
+          "observedGeneration": {
+            "description": "observedGeneration represents the .metadata.generation that the condition was set based upon. For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date with respect to the current state of the instance.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "reason": {
+            "default": "",
+            "description": "reason contains a programmatic identifier indicating the reason for the condition's last transition. Producers of specific condition types may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.",
+            "type": "string"
+          },
+          "status": {
+            "default": "",
+            "description": "status of the condition, one of True, False, Unknown.",
+            "type": "string"
+          },
+          "type": {
+            "default": "",
+            "description": "type of condition in CamelCase or in foo.example.com/CamelCase.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "status",
+          "lastTransitionTime",
+          "reason",
+          "message"
+        ],
+        "type": "object"
+      },
       "io.k8s.apimachinery.pkg.apis.meta.v1.DeleteOptions": {
         "description": "DeleteOptions may be provided when deleting an API object.",
         "properties": {
@@ -287,14 +335,32 @@
             "version": "v1"
           },
           {
-            "group": "coordination.k8s.io",
+            "group": "storagemigration.k8s.io",
             "kind": "DeleteOptions",
-            "version": "v1beta1"
+            "version": "v1"
           }
         ]
       },
       "io.k8s.apimachinery.pkg.apis.meta.v1.FieldsV1": {
         "description": "FieldsV1 stores a set of fields in a data structure like a Trie, in JSON format.\n\nEach key is either a '.' representing the field itself, and will always map to an empty set, or a string representing a sub-field or item. The string will follow one of these four formats: 'f:<name>', where <name> is the name of a field in a struct, or key in a map 'v:<value>', where <value> is the exact json formatted value of a list item 'i:<index>', where <index> is position of a item in a list 'k:<keys>', where <keys> is a map of  a list item's key fields to their unique values If a key maps to an empty Fields value, the field that key represents is part of the set.\n\nThe exact format is defined in sigs.k8s.io/structured-merge-diff",
+        "type": "object"
+      },
+      "io.k8s.apimachinery.pkg.apis.meta.v1.GroupResource": {
+        "description": "GroupResource specifies a Group and a Resource, but does not force a version.  This is useful for identifying concepts during lookup stages without having partially valid types",
+        "properties": {
+          "group": {
+            "default": "",
+            "type": "string"
+          },
+          "resource": {
+            "default": "",
+            "type": "string"
+          }
+        },
+        "required": [
+          "group",
+          "resource"
+        ],
         "type": "object"
       },
       "io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta": {
@@ -369,11 +435,6 @@
           }
         },
         "type": "object"
-      },
-      "io.k8s.apimachinery.pkg.apis.meta.v1.MicroTime": {
-        "description": "MicroTime is version of Time with microsecond level precision.",
-        "format": "date-time",
-        "type": "string"
       },
       "io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta": {
         "description": "ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create.",
@@ -689,9 +750,9 @@
             "version": "v1"
           },
           {
-            "group": "coordination.k8s.io",
+            "group": "storagemigration.k8s.io",
             "kind": "WatchEvent",
-            "version": "v1beta1"
+            "version": "v1"
           }
         ]
       },
@@ -715,10 +776,10 @@
   },
   "openapi": "3.0.0",
   "paths": {
-    "/apis/coordination.k8s.io/v1beta1/": {
+    "/apis/storagemigration.k8s.io/v1/": {
       "get": {
         "description": "get available resources",
-        "operationId": "getCoordinationV1beta1APIResources",
+        "operationId": "getStoragemigrationV1APIResources",
         "responses": {
           "200": {
             "content": {
@@ -750,184 +811,14 @@
           }
         },
         "tags": [
-          "coordination_v1beta1"
+          "storagemigration_v1"
         ]
       }
     },
-    "/apis/coordination.k8s.io/v1beta1/leasecandidates": {
-      "get": {
-        "description": "list or watch objects of kind LeaseCandidate",
-        "operationId": "listCoordinationV1beta1LeaseCandidateForAllNamespaces",
-        "responses": {
-          "200": {
-            "content": {
-              "application/cbor": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
-                }
-              },
-              "application/cbor-seq": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
-                }
-              },
-              "application/json;stream=watch": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
-                }
-              },
-              "application/vnd.kubernetes.protobuf": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
-                }
-              },
-              "application/vnd.kubernetes.protobuf;stream=watch": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
-                }
-              },
-              "application/yaml": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "tags": [
-          "coordination_v1beta1"
-        ],
-        "x-kubernetes-action": "list",
-        "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
-        }
-      },
-      "parameters": [
-        {
-          "description": "allowWatchBookmarks requests watch events with type \"BOOKMARK\". Servers that do not implement bookmarks may ignore this flag and bookmarks are sent at the server's discretion. Clients should not assume bookmarks are returned at any specific interval, nor may they assume the server will send any BOOKMARK event during a session. If this is not a watch, this field is ignored.",
-          "in": "query",
-          "name": "allowWatchBookmarks",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server, the server will respond with a 410 ResourceExpired error together with a continue token. If the client needs a consistent list, it must restart their list without the continue field. Otherwise, the client may send another list request with the token received with the 410 error, the server will respond with a list starting from the next key, but from the latest snapshot, which is inconsistent from the previous list results - objects that are created, modified, or deleted after the first list request will be included in the response, as long as their keys are after the \"next key\".\n\nThis field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
-          "in": "query",
-          "name": "continue",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
-          "in": "query",
-          "name": "fieldSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything.",
-          "in": "query",
-          "name": "labelSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
-          "in": "query",
-          "name": "limit",
-          "schema": {
-            "type": "integer",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "If 'true', then the output is pretty printed. Defaults to 'false' unless the user-agent indicates a browser or command-line HTTP tool (curl and wget).",
-          "in": "query",
-          "name": "pretty",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "resourceVersion sets a constraint on what resource versions a request may be served from. See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for details.\n\nDefaults to unset",
-          "in": "query",
-          "name": "resourceVersion",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "resourceVersionMatch determines how resourceVersion is applied to list calls. It is highly recommended that resourceVersionMatch be set for list calls where resourceVersion is set See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for details.\n\nDefaults to unset",
-          "in": "query",
-          "name": "resourceVersionMatch",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "`sendInitialEvents=true` may be set together with `watch=true`. In that case, the watch stream will begin with synthetic events to produce the current state of objects in the collection. Once all such events have been sent, a synthetic \"Bookmark\" event  will be sent. The bookmark will report the ResourceVersion (RV) corresponding to the set of objects, and be marked with `\"k8s.io/initial-events-end\": \"true\"` annotation. Afterwards, the watch stream will proceed as usual, sending watch events corresponding to changes (subsequent to the RV) to objects watched.\n\nWhen `sendInitialEvents` option is set, we require `resourceVersionMatch` option to also be set. The semantic of the watch request is as following: - `resourceVersionMatch` = NotOlderThan\n  is interpreted as \"data at least as new as the provided `resourceVersion`\"\n  and the bookmark event is send when the state is synced\n  to a `resourceVersion` at least as fresh as the one provided by the ListOptions.\n  If `resourceVersion` is unset, this is interpreted as \"consistent read\" and the\n  bookmark event is send when the state is synced at least to the moment\n  when request started being processed.\n- `resourceVersionMatch` set to any other value or unset\n  Invalid error is returned.\n\nDefaults to true if `resourceVersion=\"\"` or `resourceVersion=\"0\"` (for backward compatibility reasons) and to false otherwise.",
-          "in": "query",
-          "name": "sendInitialEvents",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "shardSelector restricts the list of returned objects using a CEL-based shard selector expression. The format uses the shardRange() function combined with || (logical OR) to specify one or more hash ranges:\n\n  shardRange(object.metadata.uid, '0x0', '0x8000000000000000')\n  shardRange(object.metadata.uid, '0x0', '0x8000000000000000') || shardRange(object.metadata.uid, '0x8000000000000000', '0x10000000000000000')\n\nField paths use CEL-style object-rooted syntax (e.g. \"object.metadata.uid\"), NOT the fieldSelector format (\"metadata.uid\"). Currently supported paths:\n  - object.metadata.uid\n  - object.metadata.namespace\n\nhexStart and hexEnd are single-quoted CEL string literals with a '0x' prefix, defining the inclusive lower and exclusive upper bounds over the 64-bit FNV-1a hash space. The full range is [0x0, 0x10000000000000000), where the exclusive upper bound equals 2^64.\n\nExamples:\n  2-shard split:\n    shard 0: shardRange(object.metadata.uid, '0x0000000000000000', '0x8000000000000000')\n    shard 1: shardRange(object.metadata.uid, '0x8000000000000000', '0x10000000000000000')\n  4-shard split:\n    shard 0: shardRange(object.metadata.uid, '0x0000000000000000', '0x4000000000000000')\n    shard 1: shardRange(object.metadata.uid, '0x4000000000000000', '0x8000000000000000')\n    shard 2: shardRange(object.metadata.uid, '0x8000000000000000', '0xc000000000000000')\n    shard 3: shardRange(object.metadata.uid, '0xc000000000000000', '0x10000000000000000')\n\nThis is an alpha field and requires enabling the ShardedListAndWatch feature gate.",
-          "in": "query",
-          "name": "shardSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "Timeout for the list/watch call. This limits the duration of the call, regardless of any activity or inactivity.",
-          "in": "query",
-          "name": "timeoutSeconds",
-          "schema": {
-            "type": "integer",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
-          "in": "query",
-          "name": "watch",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        }
-      ]
-    },
-    "/apis/coordination.k8s.io/v1beta1/namespaces/{namespace}/leasecandidates": {
+    "/apis/storagemigration.k8s.io/v1/storageversionmigrations": {
       "delete": {
-        "description": "delete collection of LeaseCandidate",
-        "operationId": "deleteCoordinationV1beta1CollectionNamespacedLeaseCandidate",
+        "description": "delete collection of StorageVersionMigration",
+        "operationId": "deleteStoragemigrationV1CollectionStorageVersionMigration",
         "parameters": [
           {
             "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server, the server will respond with a 410 ResourceExpired error together with a continue token. If the client needs a consistent list, it must restart their list without the continue field. Otherwise, the client may send another list request with the token received with the 410 error, the server will respond with a list starting from the next key, but from the latest snapshot, which is inconsistent from the previous list results - objects that are created, modified, or deleted after the first list request will be included in the response, as long as their keys are after the \"next key\".\n\nThis field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
@@ -1096,18 +987,18 @@
           }
         },
         "tags": [
-          "coordination_v1beta1"
+          "storagemigration_v1"
         ],
         "x-kubernetes-action": "deletecollection",
         "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
         }
       },
       "get": {
-        "description": "list or watch objects of kind LeaseCandidate",
-        "operationId": "listCoordinationV1beta1NamespacedLeaseCandidate",
+        "description": "list or watch objects of kind StorageVersionMigration",
+        "operationId": "listStoragemigrationV1StorageVersionMigration",
         "parameters": [
           {
             "description": "allowWatchBookmarks requests watch events with type \"BOOKMARK\". Servers that do not implement bookmarks may ignore this flag and bookmarks are sent at the server's discretion. Clients should not assume bookmarks are returned at any specific interval, nor may they assume the server will send any BOOKMARK event during a session. If this is not a watch, this field is ignored.",
@@ -1214,37 +1105,37 @@
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigrationList"
                 }
               },
               "application/cbor-seq": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigrationList"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigrationList"
                 }
               },
               "application/json;stream=watch": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigrationList"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigrationList"
                 }
               },
               "application/vnd.kubernetes.protobuf;stream=watch": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigrationList"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidateList"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigrationList"
                 }
               }
             },
@@ -1255,26 +1146,16 @@
           }
         },
         "tags": [
-          "coordination_v1beta1"
+          "storagemigration_v1"
         ],
         "x-kubernetes-action": "list",
         "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
         }
       },
       "parameters": [
-        {
-          "description": "object name and auth scope, such as for teams and projects",
-          "in": "path",
-          "name": "namespace",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
         {
           "description": "If 'true', then the output is pretty printed. Defaults to 'false' unless the user-agent indicates a browser or command-line HTTP tool (curl and wget).",
           "in": "query",
@@ -1286,8 +1167,8 @@
         }
       ],
       "post": {
-        "description": "create a LeaseCandidate",
-        "operationId": "createCoordinationV1beta1NamespacedLeaseCandidate",
+        "description": "create a StorageVersionMigration",
+        "operationId": "createStoragemigrationV1StorageVersionMigration",
         "parameters": [
           {
             "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
@@ -1321,7 +1202,7 @@
           "content": {
             "*/*": {
               "schema": {
-                "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
               }
             }
           },
@@ -1332,22 +1213,22 @@
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               }
             },
@@ -1357,22 +1238,22 @@
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               }
             },
@@ -1382,22 +1263,22 @@
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               }
             },
@@ -1408,20 +1289,20 @@
           }
         },
         "tags": [
-          "coordination_v1beta1"
+          "storagemigration_v1"
         ],
         "x-kubernetes-action": "post",
         "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
         }
       }
     },
-    "/apis/coordination.k8s.io/v1beta1/namespaces/{namespace}/leasecandidates/{name}": {
+    "/apis/storagemigration.k8s.io/v1/storageversionmigrations/{name}": {
       "delete": {
-        "description": "delete a LeaseCandidate",
-        "operationId": "deleteCoordinationV1beta1NamespacedLeaseCandidate",
+        "description": "delete a StorageVersionMigration",
+        "operationId": "deleteStoragemigrationV1StorageVersionMigration",
         "parameters": [
           {
             "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
@@ -1534,39 +1415,39 @@
           }
         },
         "tags": [
-          "coordination_v1beta1"
+          "storagemigration_v1"
         ],
         "x-kubernetes-action": "delete",
         "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
         }
       },
       "get": {
-        "description": "read the specified LeaseCandidate",
-        "operationId": "readCoordinationV1beta1NamespacedLeaseCandidate",
+        "description": "read the specified StorageVersionMigration",
+        "operationId": "readStoragemigrationV1StorageVersionMigration",
         "responses": {
           "200": {
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               }
             },
@@ -1577,30 +1458,20 @@
           }
         },
         "tags": [
-          "coordination_v1beta1"
+          "storagemigration_v1"
         ],
         "x-kubernetes-action": "get",
         "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
         }
       },
       "parameters": [
         {
-          "description": "name of the LeaseCandidate",
+          "description": "name of the StorageVersionMigration",
           "in": "path",
           "name": "name",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "object name and auth scope, such as for teams and projects",
-          "in": "path",
-          "name": "namespace",
           "required": true,
           "schema": {
             "type": "string",
@@ -1618,8 +1489,8 @@
         }
       ],
       "patch": {
-        "description": "partially update the specified LeaseCandidate",
-        "operationId": "patchCoordinationV1beta1NamespacedLeaseCandidate",
+        "description": "partially update the specified StorageVersionMigration",
+        "operationId": "patchStoragemigrationV1StorageVersionMigration",
         "parameters": [
           {
             "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
@@ -1693,22 +1564,22 @@
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               }
             },
@@ -1718,22 +1589,22 @@
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               }
             },
@@ -1744,18 +1615,18 @@
           }
         },
         "tags": [
-          "coordination_v1beta1"
+          "storagemigration_v1"
         ],
         "x-kubernetes-action": "patch",
         "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
         }
       },
       "put": {
-        "description": "replace the specified LeaseCandidate",
-        "operationId": "replaceCoordinationV1beta1NamespacedLeaseCandidate",
+        "description": "replace the specified StorageVersionMigration",
+        "operationId": "replaceStoragemigrationV1StorageVersionMigration",
         "parameters": [
           {
             "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
@@ -1789,7 +1660,7 @@
           "content": {
             "*/*": {
               "schema": {
-                "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
               }
             }
           },
@@ -1800,22 +1671,22 @@
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               }
             },
@@ -1825,22 +1696,22 @@
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.api.coordination.v1beta1.LeaseCandidate"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               }
             },
@@ -1851,56 +1722,41 @@
           }
         },
         "tags": [
-          "coordination_v1beta1"
+          "storagemigration_v1"
         ],
         "x-kubernetes-action": "put",
         "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
         }
       }
     },
-    "/apis/coordination.k8s.io/v1beta1/watch/leasecandidates": {
+    "/apis/storagemigration.k8s.io/v1/storageversionmigrations/{name}/status": {
       "get": {
-        "description": "watch individual changes to a list of LeaseCandidate. deprecated: use the 'watch' parameter with a list operation instead.",
-        "operationId": "watchCoordinationV1beta1LeaseCandidateListForAllNamespaces",
+        "description": "read status of the specified StorageVersionMigration",
+        "operationId": "readStoragemigrationV1StorageVersionMigrationStatus",
         "responses": {
           "200": {
             "content": {
               "application/cbor": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/cbor-seq": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/json;stream=watch": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/vnd.kubernetes.protobuf": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/vnd.kubernetes.protobuf;stream=watch": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               },
               "application/yaml": {
                 "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
                 }
               }
             },
@@ -1911,413 +1767,18 @@
           }
         },
         "tags": [
-          "coordination_v1beta1"
+          "storagemigration_v1"
         ],
-        "x-kubernetes-action": "watchlist",
+        "x-kubernetes-action": "get",
         "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
         }
       },
       "parameters": [
         {
-          "description": "allowWatchBookmarks requests watch events with type \"BOOKMARK\". Servers that do not implement bookmarks may ignore this flag and bookmarks are sent at the server's discretion. Clients should not assume bookmarks are returned at any specific interval, nor may they assume the server will send any BOOKMARK event during a session. If this is not a watch, this field is ignored.",
-          "in": "query",
-          "name": "allowWatchBookmarks",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server, the server will respond with a 410 ResourceExpired error together with a continue token. If the client needs a consistent list, it must restart their list without the continue field. Otherwise, the client may send another list request with the token received with the 410 error, the server will respond with a list starting from the next key, but from the latest snapshot, which is inconsistent from the previous list results - objects that are created, modified, or deleted after the first list request will be included in the response, as long as their keys are after the \"next key\".\n\nThis field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
-          "in": "query",
-          "name": "continue",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
-          "in": "query",
-          "name": "fieldSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything.",
-          "in": "query",
-          "name": "labelSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
-          "in": "query",
-          "name": "limit",
-          "schema": {
-            "type": "integer",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "If 'true', then the output is pretty printed. Defaults to 'false' unless the user-agent indicates a browser or command-line HTTP tool (curl and wget).",
-          "in": "query",
-          "name": "pretty",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "resourceVersion sets a constraint on what resource versions a request may be served from. See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for details.\n\nDefaults to unset",
-          "in": "query",
-          "name": "resourceVersion",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "resourceVersionMatch determines how resourceVersion is applied to list calls. It is highly recommended that resourceVersionMatch be set for list calls where resourceVersion is set See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for details.\n\nDefaults to unset",
-          "in": "query",
-          "name": "resourceVersionMatch",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "`sendInitialEvents=true` may be set together with `watch=true`. In that case, the watch stream will begin with synthetic events to produce the current state of objects in the collection. Once all such events have been sent, a synthetic \"Bookmark\" event  will be sent. The bookmark will report the ResourceVersion (RV) corresponding to the set of objects, and be marked with `\"k8s.io/initial-events-end\": \"true\"` annotation. Afterwards, the watch stream will proceed as usual, sending watch events corresponding to changes (subsequent to the RV) to objects watched.\n\nWhen `sendInitialEvents` option is set, we require `resourceVersionMatch` option to also be set. The semantic of the watch request is as following: - `resourceVersionMatch` = NotOlderThan\n  is interpreted as \"data at least as new as the provided `resourceVersion`\"\n  and the bookmark event is send when the state is synced\n  to a `resourceVersion` at least as fresh as the one provided by the ListOptions.\n  If `resourceVersion` is unset, this is interpreted as \"consistent read\" and the\n  bookmark event is send when the state is synced at least to the moment\n  when request started being processed.\n- `resourceVersionMatch` set to any other value or unset\n  Invalid error is returned.\n\nDefaults to true if `resourceVersion=\"\"` or `resourceVersion=\"0\"` (for backward compatibility reasons) and to false otherwise.",
-          "in": "query",
-          "name": "sendInitialEvents",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "shardSelector restricts the list of returned objects using a CEL-based shard selector expression. The format uses the shardRange() function combined with || (logical OR) to specify one or more hash ranges:\n\n  shardRange(object.metadata.uid, '0x0', '0x8000000000000000')\n  shardRange(object.metadata.uid, '0x0', '0x8000000000000000') || shardRange(object.metadata.uid, '0x8000000000000000', '0x10000000000000000')\n\nField paths use CEL-style object-rooted syntax (e.g. \"object.metadata.uid\"), NOT the fieldSelector format (\"metadata.uid\"). Currently supported paths:\n  - object.metadata.uid\n  - object.metadata.namespace\n\nhexStart and hexEnd are single-quoted CEL string literals with a '0x' prefix, defining the inclusive lower and exclusive upper bounds over the 64-bit FNV-1a hash space. The full range is [0x0, 0x10000000000000000), where the exclusive upper bound equals 2^64.\n\nExamples:\n  2-shard split:\n    shard 0: shardRange(object.metadata.uid, '0x0000000000000000', '0x8000000000000000')\n    shard 1: shardRange(object.metadata.uid, '0x8000000000000000', '0x10000000000000000')\n  4-shard split:\n    shard 0: shardRange(object.metadata.uid, '0x0000000000000000', '0x4000000000000000')\n    shard 1: shardRange(object.metadata.uid, '0x4000000000000000', '0x8000000000000000')\n    shard 2: shardRange(object.metadata.uid, '0x8000000000000000', '0xc000000000000000')\n    shard 3: shardRange(object.metadata.uid, '0xc000000000000000', '0x10000000000000000')\n\nThis is an alpha field and requires enabling the ShardedListAndWatch feature gate.",
-          "in": "query",
-          "name": "shardSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "Timeout for the list/watch call. This limits the duration of the call, regardless of any activity or inactivity.",
-          "in": "query",
-          "name": "timeoutSeconds",
-          "schema": {
-            "type": "integer",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
-          "in": "query",
-          "name": "watch",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        }
-      ]
-    },
-    "/apis/coordination.k8s.io/v1beta1/watch/namespaces/{namespace}/leasecandidates": {
-      "get": {
-        "description": "watch individual changes to a list of LeaseCandidate. deprecated: use the 'watch' parameter with a list operation instead.",
-        "operationId": "watchCoordinationV1beta1NamespacedLeaseCandidateList",
-        "responses": {
-          "200": {
-            "content": {
-              "application/cbor": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/cbor-seq": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/json;stream=watch": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/vnd.kubernetes.protobuf": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/vnd.kubernetes.protobuf;stream=watch": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/yaml": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "tags": [
-          "coordination_v1beta1"
-        ],
-        "x-kubernetes-action": "watchlist",
-        "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
-        }
-      },
-      "parameters": [
-        {
-          "description": "allowWatchBookmarks requests watch events with type \"BOOKMARK\". Servers that do not implement bookmarks may ignore this flag and bookmarks are sent at the server's discretion. Clients should not assume bookmarks are returned at any specific interval, nor may they assume the server will send any BOOKMARK event during a session. If this is not a watch, this field is ignored.",
-          "in": "query",
-          "name": "allowWatchBookmarks",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server, the server will respond with a 410 ResourceExpired error together with a continue token. If the client needs a consistent list, it must restart their list without the continue field. Otherwise, the client may send another list request with the token received with the 410 error, the server will respond with a list starting from the next key, but from the latest snapshot, which is inconsistent from the previous list results - objects that are created, modified, or deleted after the first list request will be included in the response, as long as their keys are after the \"next key\".\n\nThis field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
-          "in": "query",
-          "name": "continue",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
-          "in": "query",
-          "name": "fieldSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything.",
-          "in": "query",
-          "name": "labelSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
-          "in": "query",
-          "name": "limit",
-          "schema": {
-            "type": "integer",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "object name and auth scope, such as for teams and projects",
-          "in": "path",
-          "name": "namespace",
-          "required": true,
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "If 'true', then the output is pretty printed. Defaults to 'false' unless the user-agent indicates a browser or command-line HTTP tool (curl and wget).",
-          "in": "query",
-          "name": "pretty",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "resourceVersion sets a constraint on what resource versions a request may be served from. See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for details.\n\nDefaults to unset",
-          "in": "query",
-          "name": "resourceVersion",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "resourceVersionMatch determines how resourceVersion is applied to list calls. It is highly recommended that resourceVersionMatch be set for list calls where resourceVersion is set See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for details.\n\nDefaults to unset",
-          "in": "query",
-          "name": "resourceVersionMatch",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "`sendInitialEvents=true` may be set together with `watch=true`. In that case, the watch stream will begin with synthetic events to produce the current state of objects in the collection. Once all such events have been sent, a synthetic \"Bookmark\" event  will be sent. The bookmark will report the ResourceVersion (RV) corresponding to the set of objects, and be marked with `\"k8s.io/initial-events-end\": \"true\"` annotation. Afterwards, the watch stream will proceed as usual, sending watch events corresponding to changes (subsequent to the RV) to objects watched.\n\nWhen `sendInitialEvents` option is set, we require `resourceVersionMatch` option to also be set. The semantic of the watch request is as following: - `resourceVersionMatch` = NotOlderThan\n  is interpreted as \"data at least as new as the provided `resourceVersion`\"\n  and the bookmark event is send when the state is synced\n  to a `resourceVersion` at least as fresh as the one provided by the ListOptions.\n  If `resourceVersion` is unset, this is interpreted as \"consistent read\" and the\n  bookmark event is send when the state is synced at least to the moment\n  when request started being processed.\n- `resourceVersionMatch` set to any other value or unset\n  Invalid error is returned.\n\nDefaults to true if `resourceVersion=\"\"` or `resourceVersion=\"0\"` (for backward compatibility reasons) and to false otherwise.",
-          "in": "query",
-          "name": "sendInitialEvents",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "shardSelector restricts the list of returned objects using a CEL-based shard selector expression. The format uses the shardRange() function combined with || (logical OR) to specify one or more hash ranges:\n\n  shardRange(object.metadata.uid, '0x0', '0x8000000000000000')\n  shardRange(object.metadata.uid, '0x0', '0x8000000000000000') || shardRange(object.metadata.uid, '0x8000000000000000', '0x10000000000000000')\n\nField paths use CEL-style object-rooted syntax (e.g. \"object.metadata.uid\"), NOT the fieldSelector format (\"metadata.uid\"). Currently supported paths:\n  - object.metadata.uid\n  - object.metadata.namespace\n\nhexStart and hexEnd are single-quoted CEL string literals with a '0x' prefix, defining the inclusive lower and exclusive upper bounds over the 64-bit FNV-1a hash space. The full range is [0x0, 0x10000000000000000), where the exclusive upper bound equals 2^64.\n\nExamples:\n  2-shard split:\n    shard 0: shardRange(object.metadata.uid, '0x0000000000000000', '0x8000000000000000')\n    shard 1: shardRange(object.metadata.uid, '0x8000000000000000', '0x10000000000000000')\n  4-shard split:\n    shard 0: shardRange(object.metadata.uid, '0x0000000000000000', '0x4000000000000000')\n    shard 1: shardRange(object.metadata.uid, '0x4000000000000000', '0x8000000000000000')\n    shard 2: shardRange(object.metadata.uid, '0x8000000000000000', '0xc000000000000000')\n    shard 3: shardRange(object.metadata.uid, '0xc000000000000000', '0x10000000000000000')\n\nThis is an alpha field and requires enabling the ShardedListAndWatch feature gate.",
-          "in": "query",
-          "name": "shardSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "Timeout for the list/watch call. This limits the duration of the call, regardless of any activity or inactivity.",
-          "in": "query",
-          "name": "timeoutSeconds",
-          "schema": {
-            "type": "integer",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
-          "in": "query",
-          "name": "watch",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        }
-      ]
-    },
-    "/apis/coordination.k8s.io/v1beta1/watch/namespaces/{namespace}/leasecandidates/{name}": {
-      "get": {
-        "description": "watch changes to an object of kind LeaseCandidate. deprecated: use the 'watch' parameter with a list operation instead, filtered to a single item with the 'fieldSelector' parameter.",
-        "operationId": "watchCoordinationV1beta1NamespacedLeaseCandidate",
-        "responses": {
-          "200": {
-            "content": {
-              "application/cbor": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/cbor-seq": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/json;stream=watch": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/vnd.kubernetes.protobuf": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/vnd.kubernetes.protobuf;stream=watch": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              },
-              "application/yaml": {
-                "schema": {
-                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        },
-        "tags": [
-          "coordination_v1beta1"
-        ],
-        "x-kubernetes-action": "watch",
-        "x-kubernetes-group-version-kind": {
-          "group": "coordination.k8s.io",
-          "kind": "LeaseCandidate",
-          "version": "v1beta1"
-        }
-      },
-      "parameters": [
-        {
-          "description": "allowWatchBookmarks requests watch events with type \"BOOKMARK\". Servers that do not implement bookmarks may ignore this flag and bookmarks are sent at the server's discretion. Clients should not assume bookmarks are returned at any specific interval, nor may they assume the server will send any BOOKMARK event during a session. If this is not a watch, this field is ignored.",
-          "in": "query",
-          "name": "allowWatchBookmarks",
-          "schema": {
-            "type": "boolean",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server, the server will respond with a 410 ResourceExpired error together with a continue token. If the client needs a consistent list, it must restart their list without the continue field. Otherwise, the client may send another list request with the token received with the 410 error, the server will respond with a list starting from the next key, but from the latest snapshot, which is inconsistent from the previous list results - objects that are created, modified, or deleted after the first list request will be included in the response, as long as their keys are after the \"next key\".\n\nThis field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
-          "in": "query",
-          "name": "continue",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
-          "in": "query",
-          "name": "fieldSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything.",
-          "in": "query",
-          "name": "labelSelector",
-          "schema": {
-            "type": "string",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
-          "in": "query",
-          "name": "limit",
-          "schema": {
-            "type": "integer",
-            "uniqueItems": true
-          }
-        },
-        {
-          "description": "name of the LeaseCandidate",
+          "description": "name of the StorageVersionMigration",
           "in": "path",
           "name": "name",
           "required": true,
@@ -2327,9 +1788,538 @@
           }
         },
         {
-          "description": "object name and auth scope, such as for teams and projects",
+          "description": "If 'true', then the output is pretty printed. Defaults to 'false' unless the user-agent indicates a browser or command-line HTTP tool (curl and wget).",
+          "in": "query",
+          "name": "pretty",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        }
+      ],
+      "patch": {
+        "description": "partially update status of the specified StorageVersionMigration",
+        "operationId": "patchStoragemigrationV1StorageVersionMigrationStatus",
+        "parameters": [
+          {
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "in": "query",
+            "name": "dryRun",
+            "schema": {
+              "type": "string",
+              "uniqueItems": true
+            }
+          },
+          {
+            "description": "fieldManager is a name associated with the actor or entity that is making these changes. The value must be less than or 128 characters long, and only contain printable characters, as defined by https://golang.org/pkg/unicode/#IsPrint. This field is required for apply requests (application/apply-patch) but optional for non-apply patch types (JsonPatch, MergePatch, StrategicMergePatch).",
+            "in": "query",
+            "name": "fieldManager",
+            "schema": {
+              "type": "string",
+              "uniqueItems": true
+            }
+          },
+          {
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "in": "query",
+            "name": "fieldValidation",
+            "schema": {
+              "type": "string",
+              "uniqueItems": true
+            }
+          },
+          {
+            "description": "Force is going to \"force\" Apply requests. It means user will re-acquire conflicting fields owned by other people. Force flag must be unset for non-apply patch requests.",
+            "in": "query",
+            "name": "force",
+            "schema": {
+              "type": "boolean",
+              "uniqueItems": true
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/apply-patch+cbor": {
+              "schema": {
+                "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Patch"
+              }
+            },
+            "application/apply-patch+yaml": {
+              "schema": {
+                "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Patch"
+              }
+            },
+            "application/json-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Patch"
+              }
+            },
+            "application/merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Patch"
+              }
+            },
+            "application/strategic-merge-patch+json": {
+              "schema": {
+                "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.Patch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/cbor": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/vnd.kubernetes.protobuf": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/cbor": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/vnd.kubernetes.protobuf": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "storagemigration_v1"
+        ],
+        "x-kubernetes-action": "patch",
+        "x-kubernetes-group-version-kind": {
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
+        }
+      },
+      "put": {
+        "description": "replace status of the specified StorageVersionMigration",
+        "operationId": "replaceStoragemigrationV1StorageVersionMigrationStatus",
+        "parameters": [
+          {
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "in": "query",
+            "name": "dryRun",
+            "schema": {
+              "type": "string",
+              "uniqueItems": true
+            }
+          },
+          {
+            "description": "fieldManager is a name associated with the actor or entity that is making these changes. The value must be less than or 128 characters long, and only contain printable characters, as defined by https://golang.org/pkg/unicode/#IsPrint.",
+            "in": "query",
+            "name": "fieldManager",
+            "schema": {
+              "type": "string",
+              "uniqueItems": true
+            }
+          },
+          {
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "in": "query",
+            "name": "fieldValidation",
+            "schema": {
+              "type": "string",
+              "uniqueItems": true
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/cbor": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/vnd.kubernetes.protobuf": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "201": {
+            "content": {
+              "application/cbor": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/vnd.kubernetes.protobuf": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.api.storagemigration.v1.StorageVersionMigration"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "storagemigration_v1"
+        ],
+        "x-kubernetes-action": "put",
+        "x-kubernetes-group-version-kind": {
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
+        }
+      }
+    },
+    "/apis/storagemigration.k8s.io/v1/watch/storageversionmigrations": {
+      "get": {
+        "description": "watch individual changes to a list of StorageVersionMigration. deprecated: use the 'watch' parameter with a list operation instead.",
+        "operationId": "watchStoragemigrationV1StorageVersionMigrationList",
+        "responses": {
+          "200": {
+            "content": {
+              "application/cbor": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/cbor-seq": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/json;stream=watch": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/vnd.kubernetes.protobuf": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/vnd.kubernetes.protobuf;stream=watch": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "storagemigration_v1"
+        ],
+        "x-kubernetes-action": "watchlist",
+        "x-kubernetes-group-version-kind": {
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
+        }
+      },
+      "parameters": [
+        {
+          "description": "allowWatchBookmarks requests watch events with type \"BOOKMARK\". Servers that do not implement bookmarks may ignore this flag and bookmarks are sent at the server's discretion. Clients should not assume bookmarks are returned at any specific interval, nor may they assume the server will send any BOOKMARK event during a session. If this is not a watch, this field is ignored.",
+          "in": "query",
+          "name": "allowWatchBookmarks",
+          "schema": {
+            "type": "boolean",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server, the server will respond with a 410 ResourceExpired error together with a continue token. If the client needs a consistent list, it must restart their list without the continue field. Otherwise, the client may send another list request with the token received with the 410 error, the server will respond with a list starting from the next key, but from the latest snapshot, which is inconsistent from the previous list results - objects that are created, modified, or deleted after the first list request will be included in the response, as long as their keys are after the \"next key\".\n\nThis field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+          "in": "query",
+          "name": "continue",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+          "in": "query",
+          "name": "fieldSelector",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything.",
+          "in": "query",
+          "name": "labelSelector",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+          "in": "query",
+          "name": "limit",
+          "schema": {
+            "type": "integer",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "If 'true', then the output is pretty printed. Defaults to 'false' unless the user-agent indicates a browser or command-line HTTP tool (curl and wget).",
+          "in": "query",
+          "name": "pretty",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "resourceVersion sets a constraint on what resource versions a request may be served from. See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for details.\n\nDefaults to unset",
+          "in": "query",
+          "name": "resourceVersion",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "resourceVersionMatch determines how resourceVersion is applied to list calls. It is highly recommended that resourceVersionMatch be set for list calls where resourceVersion is set See https://kubernetes.io/docs/reference/using-api/api-concepts/#resource-versions for details.\n\nDefaults to unset",
+          "in": "query",
+          "name": "resourceVersionMatch",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "`sendInitialEvents=true` may be set together with `watch=true`. In that case, the watch stream will begin with synthetic events to produce the current state of objects in the collection. Once all such events have been sent, a synthetic \"Bookmark\" event  will be sent. The bookmark will report the ResourceVersion (RV) corresponding to the set of objects, and be marked with `\"k8s.io/initial-events-end\": \"true\"` annotation. Afterwards, the watch stream will proceed as usual, sending watch events corresponding to changes (subsequent to the RV) to objects watched.\n\nWhen `sendInitialEvents` option is set, we require `resourceVersionMatch` option to also be set. The semantic of the watch request is as following: - `resourceVersionMatch` = NotOlderThan\n  is interpreted as \"data at least as new as the provided `resourceVersion`\"\n  and the bookmark event is send when the state is synced\n  to a `resourceVersion` at least as fresh as the one provided by the ListOptions.\n  If `resourceVersion` is unset, this is interpreted as \"consistent read\" and the\n  bookmark event is send when the state is synced at least to the moment\n  when request started being processed.\n- `resourceVersionMatch` set to any other value or unset\n  Invalid error is returned.\n\nDefaults to true if `resourceVersion=\"\"` or `resourceVersion=\"0\"` (for backward compatibility reasons) and to false otherwise.",
+          "in": "query",
+          "name": "sendInitialEvents",
+          "schema": {
+            "type": "boolean",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "shardSelector restricts the list of returned objects using a CEL-based shard selector expression. The format uses the shardRange() function combined with || (logical OR) to specify one or more hash ranges:\n\n  shardRange(object.metadata.uid, '0x0', '0x8000000000000000')\n  shardRange(object.metadata.uid, '0x0', '0x8000000000000000') || shardRange(object.metadata.uid, '0x8000000000000000', '0x10000000000000000')\n\nField paths use CEL-style object-rooted syntax (e.g. \"object.metadata.uid\"), NOT the fieldSelector format (\"metadata.uid\"). Currently supported paths:\n  - object.metadata.uid\n  - object.metadata.namespace\n\nhexStart and hexEnd are single-quoted CEL string literals with a '0x' prefix, defining the inclusive lower and exclusive upper bounds over the 64-bit FNV-1a hash space. The full range is [0x0, 0x10000000000000000), where the exclusive upper bound equals 2^64.\n\nExamples:\n  2-shard split:\n    shard 0: shardRange(object.metadata.uid, '0x0000000000000000', '0x8000000000000000')\n    shard 1: shardRange(object.metadata.uid, '0x8000000000000000', '0x10000000000000000')\n  4-shard split:\n    shard 0: shardRange(object.metadata.uid, '0x0000000000000000', '0x4000000000000000')\n    shard 1: shardRange(object.metadata.uid, '0x4000000000000000', '0x8000000000000000')\n    shard 2: shardRange(object.metadata.uid, '0x8000000000000000', '0xc000000000000000')\n    shard 3: shardRange(object.metadata.uid, '0xc000000000000000', '0x10000000000000000')\n\nThis is an alpha field and requires enabling the ShardedListAndWatch feature gate.",
+          "in": "query",
+          "name": "shardSelector",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "Timeout for the list/watch call. This limits the duration of the call, regardless of any activity or inactivity.",
+          "in": "query",
+          "name": "timeoutSeconds",
+          "schema": {
+            "type": "integer",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "Watch for changes to the described resources and return them as a stream of add, update, and remove notifications. Specify resourceVersion.",
+          "in": "query",
+          "name": "watch",
+          "schema": {
+            "type": "boolean",
+            "uniqueItems": true
+          }
+        }
+      ]
+    },
+    "/apis/storagemigration.k8s.io/v1/watch/storageversionmigrations/{name}": {
+      "get": {
+        "description": "watch changes to an object of kind StorageVersionMigration. deprecated: use the 'watch' parameter with a list operation instead, filtered to a single item with the 'fieldSelector' parameter.",
+        "operationId": "watchStoragemigrationV1StorageVersionMigration",
+        "responses": {
+          "200": {
+            "content": {
+              "application/cbor": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/cbor-seq": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/json;stream=watch": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/vnd.kubernetes.protobuf": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/vnd.kubernetes.protobuf;stream=watch": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              },
+              "application/yaml": {
+                "schema": {
+                  "$ref": "#/components/schemas/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "storagemigration_v1"
+        ],
+        "x-kubernetes-action": "watch",
+        "x-kubernetes-group-version-kind": {
+          "group": "storagemigration.k8s.io",
+          "kind": "StorageVersionMigration",
+          "version": "v1"
+        }
+      },
+      "parameters": [
+        {
+          "description": "allowWatchBookmarks requests watch events with type \"BOOKMARK\". Servers that do not implement bookmarks may ignore this flag and bookmarks are sent at the server's discretion. Clients should not assume bookmarks are returned at any specific interval, nor may they assume the server will send any BOOKMARK event during a session. If this is not a watch, this field is ignored.",
+          "in": "query",
+          "name": "allowWatchBookmarks",
+          "schema": {
+            "type": "boolean",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "The continue option should be set when retrieving more results from the server. Since this value is server defined, clients may only use the continue value from a previous query result with identical query parameters (except for the value of continue) and the server may reject a continue value it does not recognize. If the specified continue value is no longer valid whether due to expiration (generally five to fifteen minutes) or a configuration change on the server, the server will respond with a 410 ResourceExpired error together with a continue token. If the client needs a consistent list, it must restart their list without the continue field. Otherwise, the client may send another list request with the token received with the 410 error, the server will respond with a list starting from the next key, but from the latest snapshot, which is inconsistent from the previous list results - objects that are created, modified, or deleted after the first list request will be included in the response, as long as their keys are after the \"next key\".\n\nThis field is not supported when watch is true. Clients may start a watch from the last resourceVersion value returned by the server and not miss any modifications.",
+          "in": "query",
+          "name": "continue",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "A selector to restrict the list of returned objects by their fields. Defaults to everything.",
+          "in": "query",
+          "name": "fieldSelector",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "A selector to restrict the list of returned objects by their labels. Defaults to everything.",
+          "in": "query",
+          "name": "labelSelector",
+          "schema": {
+            "type": "string",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "limit is a maximum number of responses to return for a list call. If more items exist, the server will set the `continue` field on the list metadata to a value that can be used with the same initial query to retrieve the next set of results. Setting a limit may return fewer than the requested amount of items (up to zero items) in the event all requested objects are filtered out and clients should only use the presence of the continue field to determine whether more results are available. Servers may choose not to support the limit argument and will return all of the available results. If limit is specified and the continue field is empty, clients may assume that no more results are available. This field is not supported if watch is true.\n\nThe server guarantees that the objects returned when using continue will be identical to issuing a single list call without a limit - that is, no objects created, modified, or deleted after the first request is issued will be included in any subsequent continued requests. This is sometimes referred to as a consistent snapshot, and ensures that a client that is using limit to receive smaller chunks of a very large result can ensure they see all possible objects. If objects are updated during a chunked list the version of the object that was present at the time the first list result was calculated is returned.",
+          "in": "query",
+          "name": "limit",
+          "schema": {
+            "type": "integer",
+            "uniqueItems": true
+          }
+        },
+        {
+          "description": "name of the StorageVersionMigration",
           "in": "path",
-          "name": "namespace",
+          "name": "name",
           "required": true,
           "schema": {
             "type": "string",
